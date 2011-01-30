@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := application
-APPDIR := $(shell readlink $(LOCAL_PATH)/src)
+APPDIR := ../../../../openxcom/src
 
 APP_SUBDIRS := $(patsubst $(LOCAL_PATH)/%, %, $(shell find $(LOCAL_PATH)/$(APPDIR) -path '*/.svn' -prune -o -type d -print))
 ifneq ($(APPLICATION_SUBDIRS_BUILD),)
