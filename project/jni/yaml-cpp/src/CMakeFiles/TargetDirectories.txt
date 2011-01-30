@@ -1,0 +1,3 @@
+/home/duncan/yaml-cpp-0.2.5/src/util/CMakeFiles/parse.dir
+/home/duncan/yaml-cpp-0.2.5/src/test/CMakeFiles/run-tests.dir
+/home/duncan/yaml-cpp-0.2.5/src/CMakeFiles/yaml-cpp.dir
