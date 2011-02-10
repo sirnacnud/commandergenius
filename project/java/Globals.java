@@ -17,7 +17,6 @@ class Globals {
 	// Set this value to true if you're planning to render 3D using OpenGL - it eats some GFX resources, so disabled for 2D
 	public static boolean NeedDepthBuffer = false;
 
-	// Set this value to true if you're planning to render 3D using OpenGL - it eats some GFX resources, so disabled for 2D
 	public static boolean HorizontalOrientation = true;
 
 	// prevent device from going to suspend mode
@@ -67,19 +66,28 @@ class Globals {
 	public static final int LEFT_CLICK_WITH_MULTITOUCH = 2;
 	public static final int LEFT_CLICK_WITH_PRESSURE = 3;
 	public static final int LEFT_CLICK_WITH_KEY = 4;
-	public static int LeftClickMethod = AppNeedsTwoButtonMouse ? LEFT_CLICK_NEAR_CURSOR : LEFT_CLICK_NORMAL;
+	public static final int LEFT_CLICK_WITH_TIMEOUT = 5;
+	public static final int LEFT_CLICK_WITH_TAP = 6;
+	public static final int LEFT_CLICK_WITH_TAP_OR_TIMEOUT = 7;
+	public static int LeftClickMethod = AppNeedsTwoButtonMouse ? LEFT_CLICK_WITH_TAP_OR_TIMEOUT : LEFT_CLICK_NORMAL;
 	public static int LeftClickKey = KeyEvent.KEYCODE_DPAD_CENTER;
+	public static int LeftClickTimeout = 3;
 	public static final int RIGHT_CLICK_NONE = 0;
 	public static final int RIGHT_CLICK_WITH_MULTITOUCH = 1;
 	public static final int RIGHT_CLICK_WITH_PRESSURE = 2;
 	public static final int RIGHT_CLICK_WITH_KEY = 3;
+	public static final int RIGHT_CLICK_WITH_TIMEOUT = 4;
+	public static int RightClickTimeout = 4;
 	public static int RightClickMethod = AppNeedsTwoButtonMouse ? RIGHT_CLICK_WITH_MULTITOUCH : RIGHT_CLICK_NONE;
 	public static int RightClickKey = KeyEvent.KEYCODE_MENU;
 	public static boolean MoveMouseWithJoystick = false;
 	public static int MoveMouseWithJoystickSpeed = 0;
 	public static int MoveMouseWithJoystickAccel = 0;
 	public static boolean ClickMouseWithDpad = false;
-	public static boolean ShowScreenUnderFinger = AppNeedsTwoButtonMouse;
+	public static boolean RelativeMouseMovement = AppNeedsTwoButtonMouse; // Laptop touchpad mode
+	public static int RelativeMouseMovementSpeed = 2;
+	public static int RelativeMouseMovementAccel = 0;
+	public static boolean ShowScreenUnderFinger = false;
 	public static boolean KeepAspectRatio = false;
 	public static int ClickScreenPressure = 0;
 	public static int ClickScreenTouchspotSize = 0;

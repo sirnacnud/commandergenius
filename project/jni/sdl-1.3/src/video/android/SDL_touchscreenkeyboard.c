@@ -139,10 +139,7 @@ static inline void endDrawingTex()
 static inline void drawCharTex(GLTexture_t * tex, SDL_Rect * src, SDL_Rect * dest, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
 	GLint cropRect[4];
-	/*
-	GLfloat texColor[4];
-	static const float onediv255 = 1.0f / 255.0f;
-	*/
+
 	if( !dest->h || !dest->w )
 		return;
 
@@ -150,8 +147,6 @@ static inline void drawCharTex(GLTexture_t * tex, SDL_Rect * src, SDL_Rect * des
 
 	glColor4x(r * 0x100, g * 0x100, b * 0x100,  a * 0x100 );
 
-	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
-	
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -174,9 +169,9 @@ static inline void drawCharTex(GLTexture_t * tex, SDL_Rect * src, SDL_Rect * des
 	if(src)
 	{
 		cropRect[0] = src->x;
-		cropRect[1] = src->h; // TODO: check if height works as expected in inverted GL coords
+		cropRect[1] = src->h;
 		cropRect[2] = src->w;
-		cropRect[3] = -src->h; // TODO: check if height works as expected in inverted GL coords
+		cropRect[3] = -src->h;
 	}
 	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, cropRect);
 	glDrawTexiOES(dest->x, SDL_ANDROID_sWindowHeight - dest->y - dest->h, 0, dest->w, dest->h);
@@ -670,6 +665,7 @@ static int setupScreenKeyboardButton( int buttonID, Uint8 * charBuf )
 
 	glGenTextures(1, &data->id);
 	glBindTexture(GL_TEXTURE_2D, data->id);
+	//__android_log_print(ANDROID_LOG_INFO, "libSDL", "On-screen keyboard generated OpenGL texture ID %d", data->id);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_w, texture_h, 0, GL_RGBA,
 					format ? GL_UNSIGNED_SHORT_4_4_4_4 : GL_UNSIGNED_SHORT_5_5_5_1, NULL);

@@ -37,7 +37,7 @@ import android.text.Editable;
 
 
 
-// TODO: too much code here, split into multiple files
+// TODO: too much code here, split into multiple files, possibly auto-generated menus?
 class Settings
 {
 	static String SettingsFileName = "libsdl-settings.cfg";
@@ -111,6 +111,11 @@ class Settings
 			out.writeInt(Globals.LeftClickKey);
 			out.writeInt(Globals.RightClickKey);
 			out.writeBoolean(Globals.SmoothVideo);
+			out.writeInt(Globals.LeftClickTimeout);
+			out.writeInt(Globals.RightClickTimeout);
+			out.writeBoolean(Globals.RelativeMouseMovement);
+			out.writeInt(Globals.RelativeMouseMovementSpeed);
+			out.writeInt(Globals.RelativeMouseMovementAccel);
 
 			out.close();
 			settingsLoaded = true;
@@ -236,6 +241,11 @@ class Settings
 			Globals.LeftClickKey = settingsFile.readInt();
 			Globals.RightClickKey = settingsFile.readInt();
 			Globals.SmoothVideo = settingsFile.readBoolean();
+			Globals.LeftClickTimeout = settingsFile.readInt();
+			Globals.RightClickTimeout = settingsFile.readInt();
+			Globals.RelativeMouseMovement = settingsFile.readBoolean();
+			Globals.RelativeMouseMovementSpeed = settingsFile.readInt();
+			Globals.RelativeMouseMovementAccel = settingsFile.readInt();
 			
 			settingsLoaded = true;
 
@@ -400,6 +410,14 @@ class Settings
 				}
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				Save(p);
+				p.startDownloader();
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -474,6 +492,13 @@ class Settings
 					showConfigMainMenu(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -530,6 +555,13 @@ class Settings
 					showConfigMainMenu(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -570,6 +602,13 @@ class Settings
 				}
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -595,6 +634,13 @@ class Settings
 				showCommandLineConfig(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -617,6 +663,13 @@ class Settings
 			{
 				Globals.CommandLine = edit.getText().toString();
 				dialog.dismiss();
+				showConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
 				showConfigMainMenu(p);
 			}
 		});
@@ -665,7 +718,13 @@ class Settings
 				showConfigMainMenu(p);
 			}
 		});
-
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -703,7 +762,13 @@ class Settings
 				showConfigMainMenu(p);
 			}
 		});
-
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -732,6 +797,13 @@ class Settings
 
 				dialog.dismiss();
 				showAccelerometerCenterConfig(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -764,6 +836,13 @@ class Settings
 				showConfigMainMenu(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -793,6 +872,13 @@ class Settings
 				showScreenKeyboardConfigMainMenu(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -817,6 +903,13 @@ class Settings
 				showScreenKeyboardConfigMainMenu(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -828,8 +921,7 @@ class Settings
 										p.getResources().getString(R.string.controls_screenkb_trans_1),
 										p.getResources().getString(R.string.controls_screenkb_trans_2),
 										p.getResources().getString(R.string.controls_screenkb_trans_3),
-										p.getResources().getString(R.string.controls_screenkb_trans_4),
-		};
+										p.getResources().getString(R.string.controls_screenkb_trans_4) };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(p);
 		builder.setTitle(p.getResources().getString(R.string.controls_screenkb_transparency));
@@ -841,6 +933,13 @@ class Settings
 
 				dialog.dismiss();
 				showScreenKeyboardConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -866,6 +965,13 @@ class Settings
 				showConfigMainMenu(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -883,7 +989,10 @@ class Settings
 										p.getResources().getString(R.string.leftclick_near_cursor),
 										p.getResources().getString(R.string.leftclick_multitouch),
 										p.getResources().getString(R.string.leftclick_pressure),
-										p.getResources().getString(R.string.rightclick_key) };
+										p.getResources().getString(R.string.rightclick_key),
+										p.getResources().getString(R.string.leftclick_timeout),
+										p.getResources().getString(R.string.leftclick_tap),
+										p.getResources().getString(R.string.leftclick_tap_or_timeout) };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(p);
 		builder.setTitle(R.string.leftclick_question);
@@ -895,8 +1004,47 @@ class Settings
 				dialog.dismiss();
 				if( item == Globals.LEFT_CLICK_WITH_KEY )
 					p.keyListener = new KeyRemapToolMouseClick(p, true);
+				else if( item == Globals.LEFT_CLICK_WITH_TIMEOUT || item == Globals.LEFT_CLICK_WITH_TAP_OR_TIMEOUT )
+					showLeftClickTimeoutConfig(p);
 				else
 					showMouseConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
+		AlertDialog alert = builder.create();
+		alert.setOwnerActivity(p);
+		alert.show();
+	}
+
+	static void showLeftClickTimeoutConfig(final MainActivity p) {
+		final CharSequence[] items = {	p.getResources().getString(R.string.leftclick_timeout_time_0),
+										p.getResources().getString(R.string.leftclick_timeout_time_1),
+										p.getResources().getString(R.string.leftclick_timeout_time_2),
+										p.getResources().getString(R.string.leftclick_timeout_time_3),
+										p.getResources().getString(R.string.leftclick_timeout_time_4) };
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(p);
+		builder.setTitle(R.string.leftclick_timeout_time);
+		builder.setSingleChoiceItems(items, Globals.LeftClickTimeout, new DialogInterface.OnClickListener() 
+		{
+			public void onClick(DialogInterface dialog, int item) 
+			{
+				Globals.LeftClickTimeout = item;
+				dialog.dismiss();
+				showMouseConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -915,7 +1063,8 @@ class Settings
 		final CharSequence[] items = {	p.getResources().getString(R.string.rightclick_none),
 										p.getResources().getString(R.string.rightclick_multitouch),
 										p.getResources().getString(R.string.rightclick_pressure),
-										p.getResources().getString(R.string.rightclick_key) };
+										p.getResources().getString(R.string.rightclick_key),
+										p.getResources().getString(R.string.leftclick_timeout) };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(p);
 		builder.setTitle(R.string.rightclick_question);
@@ -927,8 +1076,47 @@ class Settings
 				dialog.dismiss();
 				if( item == Globals.RIGHT_CLICK_WITH_KEY )
 					p.keyListener = new KeyRemapToolMouseClick(p, false);
+				else if( item == Globals.RIGHT_CLICK_WITH_TIMEOUT )
+					showRightClickTimeoutConfig(p);
 				else
 					showMouseConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
+		AlertDialog alert = builder.create();
+		alert.setOwnerActivity(p);
+		alert.show();
+	}
+
+	static void showRightClickTimeoutConfig(final MainActivity p) {
+		final CharSequence[] items = {	p.getResources().getString(R.string.leftclick_timeout_time_0),
+										p.getResources().getString(R.string.leftclick_timeout_time_1),
+										p.getResources().getString(R.string.leftclick_timeout_time_2),
+										p.getResources().getString(R.string.leftclick_timeout_time_3),
+										p.getResources().getString(R.string.leftclick_timeout_time_4) };
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(p);
+		builder.setTitle(R.string.leftclick_timeout_time);
+		builder.setSingleChoiceItems(items, Globals.RightClickTimeout, new DialogInterface.OnClickListener() 
+		{
+			public void onClick(DialogInterface dialog, int item) 
+			{
+				Globals.RightClickTimeout = item;
+				dialog.dismiss();
+				showMouseConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -970,19 +1158,21 @@ class Settings
 		CharSequence[] items = {
 			p.getResources().getString(R.string.pointandclick_showcreenunderfinger2),
 			p.getResources().getString(R.string.pointandclick_joystickmouse),
-			p.getResources().getString(R.string.click_with_dpadcenter)
+			p.getResources().getString(R.string.click_with_dpadcenter),
+			p.getResources().getString(R.string.pointandclick_relative)
 		};
 
 		boolean defaults[] = { 
 			Globals.ShowScreenUnderFinger,
 			Globals.MoveMouseWithJoystick,
-			Globals.ClickMouseWithDpad
+			Globals.ClickMouseWithDpad,
+			Globals.RelativeMouseMovement
 		};
 
 		
 		AlertDialog.Builder builder = new AlertDialog.Builder(p);
 		builder.setTitle(p.getResources().getString(R.string.pointandclick_question));
-		builder.setMultiChoiceItems(items, defaults, new DialogInterface.OnMultiChoiceClickListener() 
+		builder.setMultiChoiceItems(items, defaults, new DialogInterface.OnMultiChoiceClickListener()
 		{
 			public void onClick(DialogInterface dialog, int item, boolean isChecked) 
 			{
@@ -992,17 +1182,91 @@ class Settings
 					Globals.MoveMouseWithJoystick = isChecked;
 				if( item == 2 )
 					Globals.ClickMouseWithDpad = isChecked;
+				if( item == 3 )
+					Globals.RelativeMouseMovement = isChecked;
 			}
 		});
-		builder.setPositiveButton(p.getResources().getString(R.string.ok), new DialogInterface.OnClickListener() 
+		builder.setPositiveButton(p.getResources().getString(R.string.ok), new DialogInterface.OnClickListener()
 		{
 			public void onClick(DialogInterface dialog, int item) 
 			{
 				dialog.dismiss();
+				if( Globals.RelativeMouseMovement )
+					showRelativeMouseMovementConfig(p);
+				else
+					showMouseConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
+		AlertDialog alert = builder.create();
+		alert.setOwnerActivity(p);
+		alert.show();
+	}
+
+	static void showRelativeMouseMovementConfig(final MainActivity p)
+	{
+		final CharSequence[] items = {	p.getResources().getString(R.string.accel_veryslow),
+										p.getResources().getString(R.string.accel_slow),
+										p.getResources().getString(R.string.accel_medium),
+										p.getResources().getString(R.string.accel_fast),
+										p.getResources().getString(R.string.accel_veryfast) };
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(p);
+		builder.setTitle(R.string.pointandclick_relative_speed);
+		builder.setSingleChoiceItems(items, Globals.RelativeMouseMovementSpeed, new DialogInterface.OnClickListener()
+		{
+			public void onClick(DialogInterface dialog, int item) 
+			{
+				Globals.RelativeMouseMovementSpeed = item;
+
+				dialog.dismiss();
+				showRelativeMouseMovementConfig1(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
+		AlertDialog alert = builder.create();
+		alert.setOwnerActivity(p);
+		alert.show();
+	}
+
+	static void showRelativeMouseMovementConfig1(final MainActivity p)
+	{
+		final CharSequence[] items = {	p.getResources().getString(R.string.none),
+										p.getResources().getString(R.string.accel_slow),
+										p.getResources().getString(R.string.accel_medium),
+										p.getResources().getString(R.string.accel_fast) };
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(p);
+		builder.setTitle(R.string.pointandclick_relative_accel);
+		builder.setSingleChoiceItems(items, Globals.RelativeMouseMovementAccel, new DialogInterface.OnClickListener()
+		{
+			public void onClick(DialogInterface dialog, int item) 
+			{
+				Globals.RelativeMouseMovementAccel = item;
+
+				dialog.dismiss();
 				showMouseConfigMainMenu(p);
 			}
 		});
-
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -1036,6 +1300,13 @@ class Settings
 				showTrackballConfig(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -1064,6 +1335,13 @@ class Settings
 				Globals.TrackballDampening = item;
 
 				dialog.dismiss();
+				showConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
 				showConfigMainMenu(p);
 			}
 		});
@@ -1097,6 +1375,13 @@ class Settings
 				showJoystickMouseAccelConfig(p);
 			}
 		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -1126,6 +1411,13 @@ class Settings
 
 				dialog.dismiss();
 				showMouseConfigMainMenu(p);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -1236,6 +1528,13 @@ class Settings
 					showConfigMainMenu(p);
 				}
 			});
+			builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+			{
+				public void onCancel(DialogInterface dialog)
+				{
+					showConfigMainMenu(p);
+				}
+			});
 			AlertDialog alert = builder.create();
 			alert.setOwnerActivity(p);
 			alert.show();
@@ -1285,7 +1584,13 @@ class Settings
 				showRemapScreenKbConfig2(p, 0);
 			}
 		});
-
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -1323,6 +1628,13 @@ class Settings
 
 				dialog.dismiss();
 				showRemapScreenKbConfig2(p, currentButton + 1);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -1363,7 +1675,13 @@ class Settings
 				showScreenGesturesConfig2(p);
 			}
 		});
-
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -1388,6 +1706,13 @@ class Settings
 
 				dialog.dismiss();
 				showScreenGesturesConfig3(p, 0);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -1425,6 +1750,13 @@ class Settings
 
 				dialog.dismiss();
 				showScreenGesturesConfig3(p, currentButton + 1);
+			}
+		});
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -1665,7 +1997,13 @@ class Settings
 				showConfigMainMenu(p);
 			}
 		});
-
+		builder.setOnCancelListener(new DialogInterface.OnCancelListener()
+		{
+			public void onCancel(DialogInterface dialog)
+			{
+				showConfigMainMenu(p);
+			}
+		});
 		AlertDialog alert = builder.create();
 		alert.setOwnerActivity(p);
 		alert.show();
@@ -1690,7 +2028,12 @@ class Settings
 								Globals.MoveMouseWithJoystickSpeed,
 								Globals.MoveMouseWithJoystickAccel,
 								Globals.LeftClickKey,
-								Globals.RightClickKey );
+								Globals.RightClickKey,
+								Globals.LeftClickTimeout,
+								Globals.RightClickTimeout,
+								Globals.RelativeMouseMovement ? 1 : 0,
+								Globals.RelativeMouseMovementSpeed,
+								Globals.RelativeMouseMovementAccel );
 		if( Globals.AppUsesJoystick && (Globals.UseAccelerometerAsArrowKeys || Globals.UseTouchscreenKeyboard) )
 			nativeSetJoystickUsed();
 		if( Globals.AppUsesMultitouch )
@@ -1786,7 +2129,9 @@ class Settings
 	private static native void nativeSetMouseUsed(int RightClickMethod, int ShowScreenUnderFinger, int LeftClickMethod, 
 													int MoveMouseWithJoystick, int ClickMouseWithDpad, int MaxForce, int MaxRadius,
 													int MoveMouseWithJoystickSpeed, int MoveMouseWithJoystickAccel,
-													int leftClickKeycode, int rightClickKeycode);
+													int leftClickKeycode, int rightClickKeycode,
+													int leftClickTimeout, int rightClickTimeout,
+													int relativeMovement, int relativeMovementSpeed, int relativeMovementAccel);
 	private static native void nativeSetJoystickUsed();
 	private static native void nativeSetMultitouchUsed();
 	private static native void nativeSetTouchscreenKeyboardUsed();

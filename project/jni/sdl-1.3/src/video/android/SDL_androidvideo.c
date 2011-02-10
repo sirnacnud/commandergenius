@@ -118,7 +118,7 @@ int SDL_ANDROID_CallJavaSwapBuffers()
 		showScreenKeyboardDeferred = 0;
 		(*JavaEnv)->CallVoidMethod( JavaEnv, JavaRenderer, JavaShowScreenKeyboard );
 	}
-	SDL_ANDROID_DeferredTextInput();
+	SDL_ANDROID_ProcessDeferredEvents();
 	return 1;
 }
 
@@ -229,7 +229,6 @@ JAVA_EXPORT_NAME(DemoRenderer_nativeInitJavaCallbacks) ( JNIEnv*  env, jobject t
 	JavaShowScreenKeyboard = (*JavaEnv)->GetMethodID(JavaEnv, JavaRendererClass, "showScreenKeyboard", "()V");
 	
 	ANDROID_InitOSKeymap();
-	SDL_ANDROID_initFakeStdout();
 }
 
 int SDL_ANDROID_SetApplicationPutToBackgroundCallback(

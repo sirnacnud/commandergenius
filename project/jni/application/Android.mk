@@ -15,15 +15,17 @@ APP_SUBDIRS := $(APPLICATION_SUBDIRS_BUILD_NONRECURSIVE) $(APPLICATION_SUBDIRS_B
 endif
 
 LOCAL_CFLAGS :=
+LOCAL_C_INCLUDES :=
 
-ifeq ($(CRYSTAX_TOOLCHAIN),)
-LOCAL_CFLAGS += -I$(LOCAL_PATH)/../stlport/stlport
+ifeq ($(CRYSTAX_TOOLCHAIN)$(NDK_R5_TOOLCHAIN),)
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/../stlport/stlport
 endif
 
-LOCAL_CFLAGS += $(foreach D, $(APP_SUBDIRS), -I$(LOCAL_PATH)/$(D)) \
-				-I$(LOCAL_PATH)/../sdl-$(SDL_VERSION)/include \
-				$(foreach L, $(COMPILED_LIBRARIES), -I$(LOCAL_PATH)/../$(L)/include) \
-				-D__sF=__SDL_fake_stdout
+LOCAL_C_INCLUDES += $(foreach D, $(APP_SUBDIRS), $(LOCAL_PATH)/$(D)) \
+					$(LOCAL_PATH)/../sdl-$(SDL_VERSION)/include \
+					$(foreach L, $(COMPILED_LIBRARIES), $(LOCAL_PATH)/../$(L)/include) \
+
+LOCAL_CFLAGS += -include $(LOCAL_PATH)/../sdl_fake_stdout/include/SDL_android_printf.h
 
 LOCAL_CFLAGS += $(APPLICATION_ADDITIONAL_CFLAGS)
 
@@ -41,13 +43,11 @@ LOCAL_SHARED_LIBRARIES := sdl-$(SDL_VERSION) $(filter-out $(APP_AVAILABLE_STATIC
 
 LOCAL_STATIC_LIBRARIES := $(filter $(APP_AVAILABLE_STATIC_LIBS), $(COMPILED_LIBRARIES))
 
-LOCAL_STATIC_LIBRARIES += stlport
+LOCAL_STATIC_LIBRARIES += stlport sdl_fake_stdout
 
 LOCAL_LDLIBS := -lGLESv1_CM -ldl -llog -lz
-ifneq ($(NDK_R5_TOOLCHAIN),)
-endif
 
-LOCAL_LDFLAGS := -Lobj/local/armeabi
+LOCAL_LDFLAGS := -Lobj/local/armeabi -Wl,-u,_SDL_ANDROID_initFakeStdout
 
 LOCAL_LDFLAGS += $(APPLICATION_ADDITIONAL_LDFLAGS)
 
@@ -81,12 +81,18 @@ include $(BUILD_SHARED_LIBRARY)
 
 ifneq ($(APPLICATION_CUSTOM_BUILD_SCRIPT),)
 
+# TODO: here we're digging inside NDK internal build system, that's not portable
+# NDK r5b provided the $(PREBUILT_SHARED_LIBRARY) target, however it requires .so file to be already present on disk
+# Also I cannot just launch AndroidBuild.sh from makefile because other libraries are not rebuilt and linking will fail
+
 LOCAL_PATH_SDL_APPLICATION := $(LOCAL_PATH)
 
 .NOTPARALLEL: $(realpath $(LOCAL_PATH)/../../obj/local/armeabi/libapplication.so) $(LOCAL_PATH)/src/libapplication.so
 
-$(shell rm $(LOCAL_PATH)/src/libapplication.so) # Enforce rebuilding
-# $(shell rm $(LOCAL_PATH)/../../obj/local/armeabi/*.so) # libapplication.so may try to link with wrong libraries, prevent that
+# Enforce rebuilding
+$(shell rm -f $(LOCAL_PATH)/src/libapplication.so)
+$(shell mkdir -p $(LOCAL_PATH)/../../obj/local/armeabi)
+$(shell touch $(LOCAL_PATH)/../../obj/local/armeabi/libapplication.so)
 
 $(LOCAL_PATH)/src/libapplication.so: $(LOCAL_PATH)/src/AndroidBuild.sh $(LOCAL_PATH)/src/AndroidAppSettings.cfg $(APP_LIB_DEPENDS)
 	echo Launching script $(LOCAL_PATH_SDL_APPLICATION)/AndroidBuild.sh
