@@ -106,7 +106,7 @@ int rightClickTimeout = 0;
 int mouseInitialX = -1;
 int mouseInitialY = -1;
 unsigned int mouseInitialTime = 0;
-int deferredMouseTap = 0;
+volatile int deferredMouseTap = 0;
 int relativeMovement = 0;
 int relativeMovementSpeed = 2;
 int relativeMovementAccel = 0;
@@ -115,6 +115,7 @@ int relativeMovementY = 0;
 unsigned int relativeMovementTime = 0;
 int oldMouseX = 0;
 int oldMouseY = 0;
+int oldMouseButtons = 0;
 
 static inline int InsideRect(const SDL_Rect * r, int x, int y)
 {
@@ -415,10 +416,12 @@ JAVA_EXPORT_NAME(DemoGLSurfaceView_nativeMouse) ( JNIEnv*  env, jobject  thiz, j
 		}
 		if( action == MOUSE_UP )
 		{
+			SDL_ANDROID_MainThreadPushMouseButton( SDL_RELEASED, SDL_BUTTON_RIGHT );
+
 			if( mouseInitialX >= 0 && mouseInitialY >= 0 && (
 				leftClickMethod == LEFT_CLICK_WITH_TAP || leftClickMethod == LEFT_CLICK_WITH_TAP_OR_TIMEOUT ) &&
-				abs(mouseInitialX - x) < SDL_ANDROID_sFakeWindowHeight / 8 &&
-				abs(mouseInitialY - y) < SDL_ANDROID_sFakeWindowHeight / 8 &&
+				abs(mouseInitialX - x) < SDL_ANDROID_sFakeWindowHeight / 16 &&
+				abs(mouseInitialY - y) < SDL_ANDROID_sFakeWindowHeight / 16 &&
 				SDL_GetTicks() - mouseInitialTime < 700 )
 			{
 				SDL_ANDROID_MainThreadPushMouseMotion(mouseInitialX, mouseInitialY);
@@ -429,10 +432,7 @@ JAVA_EXPORT_NAME(DemoGLSurfaceView_nativeMouse) ( JNIEnv*  env, jobject  thiz, j
 			}
 			else
 			{
-				if( SDL_GetMouseState( NULL, NULL ) & SDL_BUTTON(SDL_BUTTON_LEFT) )
-					SDL_ANDROID_MainThreadPushMouseButton( SDL_RELEASED, SDL_BUTTON_LEFT );
-				if( SDL_GetMouseState( NULL, NULL ) & SDL_BUTTON(SDL_BUTTON_RIGHT) )
-					SDL_ANDROID_MainThreadPushMouseButton( SDL_RELEASED, SDL_BUTTON_RIGHT );
+				SDL_ANDROID_MainThreadPushMouseButton( SDL_RELEASED, SDL_BUTTON_LEFT );
 			}
 
 			SDL_ANDROID_ShowScreenUnderFingerRect.w = SDL_ANDROID_ShowScreenUnderFingerRect.h = 0;
@@ -511,16 +511,15 @@ JAVA_EXPORT_NAME(DemoGLSurfaceView_nativeMouse) ( JNIEnv*  env, jobject  thiz, j
 			{
 				int button = (leftClickMethod == LEFT_CLICK_WITH_PRESSURE) ? SDL_BUTTON_LEFT : SDL_BUTTON_RIGHT;
 				int buttonState = ( force > maxForce || radius > maxRadius );
-				if( button == SDL_BUTTON_RIGHT && (SDL_GetMouseState( NULL, NULL ) & SDL_BUTTON(SDL_BUTTON_LEFT)) )
+				if( button == SDL_BUTTON_RIGHT )
 					SDL_ANDROID_MainThreadPushMouseButton( SDL_RELEASED, SDL_BUTTON_LEFT );
-				if( ( (SDL_GetMouseState( NULL, NULL ) & SDL_BUTTON(button)) != 0 ) != buttonState )
-					SDL_ANDROID_MainThreadPushMouseButton( buttonState ? SDL_PRESSED : SDL_RELEASED, button );
+				SDL_ANDROID_MainThreadPushMouseButton( buttonState ? SDL_PRESSED : SDL_RELEASED, button );
 			}
 			if( mouseInitialX >= 0 && mouseInitialY >= 0 && (
 				leftClickMethod == LEFT_CLICK_WITH_TIMEOUT || leftClickMethod == LEFT_CLICK_WITH_TAP ||
 				leftClickMethod == LEFT_CLICK_WITH_TAP_OR_TIMEOUT || rightClickMethod == RIGHT_CLICK_WITH_TIMEOUT ) )
 			{
-				if( abs(mouseInitialX - x) >= SDL_ANDROID_sFakeWindowHeight / 6 || abs(mouseInitialY - y) >= SDL_ANDROID_sFakeWindowHeight / 6 )
+				if( abs(mouseInitialX - x) >= SDL_ANDROID_sFakeWindowHeight / 10 || abs(mouseInitialY - y) >= SDL_ANDROID_sFakeWindowHeight / 10 )
 				{
 					mouseInitialX = -1;
 					mouseInitialY = -1;
@@ -560,8 +559,7 @@ JAVA_EXPORT_NAME(DemoGLSurfaceView_nativeMouse) ( JNIEnv*  env, jobject  thiz, j
 		}
 		else if( rightClickMethod == RIGHT_CLICK_WITH_MULTITOUCH )
 		{
-			if( SDL_GetMouseState( NULL, NULL ) & SDL_BUTTON(SDL_BUTTON_LEFT) )
-				SDL_ANDROID_MainThreadPushMouseButton( SDL_RELEASED, SDL_BUTTON_LEFT );
+			SDL_ANDROID_MainThreadPushMouseButton( SDL_RELEASED, SDL_BUTTON_LEFT );
 			SDL_ANDROID_MainThreadPushMouseButton( (action == MOUSE_DOWN) ? SDL_PRESSED : SDL_RELEASED, SDL_BUTTON_RIGHT );
 		}
 	}
@@ -586,8 +584,14 @@ void ProcessDeferredMouseTap()
 	if( deferredMouseTap > 0 )
 	{
 		deferredMouseTap--;
-		if( !deferredMouseTap )
+		if( deferredMouseTap <= 0 )
+		{
+			if( oldMouseX + 1 < SDL_ANDROID_sFakeWindowWidth )
+				SDL_ANDROID_MainThreadPushMouseMotion(oldMouseX + 1, oldMouseY);
 			SDL_ANDROID_MainThreadPushMouseButton( SDL_RELEASED, SDL_BUTTON_LEFT );
+		}
+		else if( oldMouseX > 0 ) // Force application to redraw, and call SDL_Flip()
+			SDL_ANDROID_MainThreadPushMouseMotion(oldMouseX - 1, oldMouseY);
 	}
 }
 
@@ -1150,7 +1154,11 @@ extern void SDL_ANDROID_PumpEvents()
 				SDL_SendMouseMotion(NULL, 0, ev->motion.x, ev->motion.y);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
-				SDL_SendMouseButton( NULL, ev->button.state, ev->button.button );
+				if( ((oldMouseButtons & SDL_BUTTON(ev->button.button)) != 0) != ev->button.state )
+				{
+					oldMouseButtons = (oldMouseButtons & ~SDL_BUTTON(ev->button.button)) | (ev->button.state ? SDL_BUTTON(ev->button.button) : 0);
+					SDL_SendMouseButton( NULL, ev->button.state, ev->button.button );
+				}
 				break;
 			case SDL_KEYDOWN:
 				//__android_log_print(ANDROID_LOG_INFO, "libSDL", "SDL_KEYDOWN: %i %i", ev->key.keysym.sym, ev->key.state);
