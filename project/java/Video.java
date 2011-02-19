@@ -18,6 +18,7 @@ import android.view.KeyEvent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.os.Environment;
+import java.io.File;
 
 import android.widget.TextView;
 import java.lang.Thread;
@@ -205,15 +206,35 @@ class DemoRenderer extends GLSurfaceView_SDL.Renderer {
 		// Thread.currentThread().setPriority((Thread.currentThread().getPriority() + Thread.MIN_PRIORITY)/2);
 		
 		mGlContextLost = false;
-		System.loadLibrary("application");
-		System.loadLibrary("sdl_main");
+		
+		String libs[] = { "application", "sdl_main" };
+		try
+		{
+			for(String l : libs)
+			{
+				System.loadLibrary(l);
+			}
+		}
+		catch ( UnsatisfiedLinkError e )
+		{
+			for(String l : libs)
+			{
+				String libname = System.mapLibraryName(l);
+				File libpath = new File(context.getCacheDir(), libname);
+				System.out.println("libSDL: loading lib " + libpath.getPath());
+				System.load(libpath.getPath());
+				libpath.delete();
+			}
+		}
+
 		Settings.Apply(context);
 		accelerometer = new AccelerometerReader(context);
 		// Tweak video thread priority, if user selected big audio buffer
 		if(Globals.AudioBufferConfig >= 2)
 			Thread.currentThread().setPriority( (Thread.NORM_PRIORITY + Thread.MIN_PRIORITY) / 2 ); // Lower than normal
 		nativeInit( Globals.DataDir,
-					Globals.CommandLine); // Calls main() and never returns, hehe - we'll call eglSwapBuffers() from native code
+					Globals.CommandLine,
+					( Globals.SwVideoMode && Globals.MultiThreadedVideo ) ? 1 : 0 ); // Calls main() and never returns, hehe - we'll call eglSwapBuffers() from native code
 		System.exit(0); // The main() returns here - I don't bother with deinit stuff, just terminate process
 	}
 
@@ -252,7 +273,7 @@ class DemoRenderer extends GLSurfaceView_SDL.Renderer {
 	};
 
 	private native void nativeInitJavaCallbacks();
-	private native void nativeInit(String CurrentPath, String CommandLine);
+	private native void nativeInit(String CurrentPath, String CommandLine, int multiThreadedVideo);
 	private native void nativeResize(int w, int h, int keepAspectRatio);
 	private native void nativeDone();
 	private native void nativeGlContextLost();

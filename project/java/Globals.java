@@ -9,6 +9,8 @@ import android.view.KeyEvent;
 class Globals {
 	public static String ApplicationName = "CommanderGenius";
 
+	public static String AppLibraries[] = { "sdl-1.2", };
+
 	public static final boolean Using_SDL_1_3 = false;
 
 	// Should be zip file
@@ -16,6 +18,8 @@ class Globals {
 
 	// Set this value to true if you're planning to render 3D using OpenGL - it eats some GFX resources, so disabled for 2D
 	public static boolean NeedDepthBuffer = false;
+
+	public static boolean SwVideoMode = false;
 
 	public static boolean HorizontalOrientation = true;
 
@@ -101,8 +105,5 @@ class Globals {
 	public static int TouchscreenCalibration[] = new int[4];
 	public static String DataDir = new String("");
 	public static boolean SmoothVideo = false;
-}
-
-class LoadLibrary {
-	public LoadLibrary() { System.loadLibrary("sdl-1.2"); };
+	public static boolean MultiThreadedVideo = false;
 }

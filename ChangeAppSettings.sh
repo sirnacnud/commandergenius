@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CHANGE_APP_SETTINGS_VERSION=16
+CHANGE_APP_SETTINGS_VERSION=17
 AUTO=
 
 if [ "X$1" = "X-a" ]; then
@@ -101,6 +101,18 @@ read var
 if [ -n "$var" ] ; then
 	NeedDepthBuffer="$var"
 fi
+fi
+
+if [ "$LibSdlVersion" = "1.2" ]; then
+	if [ -z "$SwVideoMode" -o -z "$AUTO" ]; then
+	echo -n "\nApplication uses software video buffer - you're calling SDL_SetVideoMode() without SDL_HWSURFACE and without SDL_OPENGL,\nthis will allow small speed optimization (y) or (n) ($SwVideoMode): "
+	read var
+	if [ -n "$var" ] ; then
+		SwVideoMode="$var"
+	fi
+	fi
+else
+	SwVideoMode=n
 fi
 
 if [ -z "$AppUsesMouse" -o -z "$AUTO" ]; then
@@ -337,6 +349,7 @@ echo AppDataDownloadUrl=\"$AppDataDownloadUrl\" >> AndroidAppSettings.cfg
 echo SdlVideoResize=$SdlVideoResize >> AndroidAppSettings.cfg
 echo SdlVideoResizeKeepAspect=$SdlVideoResizeKeepAspect >> AndroidAppSettings.cfg
 echo NeedDepthBuffer=$NeedDepthBuffer >> AndroidAppSettings.cfg
+echo SwVideoMode=$SwVideoMode >> AndroidAppSettings.cfg
 echo AppUsesMouse=$AppUsesMouse >> AndroidAppSettings.cfg
 echo AppNeedsTwoButtonMouse=$AppNeedsTwoButtonMouse >> AndroidAppSettings.cfg
 echo AppNeedsArrowKeys=$AppNeedsArrowKeys >> AndroidAppSettings.cfg
@@ -404,6 +417,12 @@ else
 	NeedDepthBuffer=false
 fi
 
+if [ "$SwVideoMode" = "y" ] ; then
+	SwVideoMode=true
+else
+	SwVideoMode=false
+fi
+
 if [ "$AppUsesMouse" = "y" ] ; then
 	AppUsesMouse=true
 else
@@ -469,7 +488,7 @@ if [ "$MultiABI" = "y" ] ; then
 else
 	MultiABI="armeabi"
 fi
-LibrariesToLoad="System.loadLibrary(\\\"sdl-$LibSdlVersion\\\");"
+LibrariesToLoad="\\\"sdl-$LibSdlVersion\\\""
 StaticLibraries=`grep 'APP_AVAILABLE_STATIC_LIBS' project/jni/SettingsTemplate.mk | sed 's/.*=\(.*\)/\1/'`
 for lib in $CompiledLibraries; do
 	process=true
@@ -477,7 +496,7 @@ for lib in $CompiledLibraries; do
 		if [ "$lib" = "$lib1" ]; then process=false; fi
 	done
 	if $process; then
-		LibrariesToLoad="$LibrariesToLoad System.loadLibrary(\\\"$lib\\\");"
+		LibrariesToLoad="$LibrariesToLoad, \\\"$lib\\\""
 	fi
 done
 
@@ -511,6 +530,7 @@ cat project/src/Globals.java | \
 	sed "s/public static final boolean Using_SDL_1_3 = .*;/public static final boolean Using_SDL_1_3 = $UsingSdl13;/" | \
 	sed "s@public static String DataDownloadUrl = .*@public static String DataDownloadUrl = \"$AppDataDownloadUrl1\";@" | \
 	sed "s/public static boolean NeedDepthBuffer = .*;/public static boolean NeedDepthBuffer = $NeedDepthBuffer;/" | \
+	sed "s/public static boolean SwVideoMode = .*;/public static boolean SwVideoMode = $SwVideoMode;/" | \
 	sed "s/public static boolean HorizontalOrientation = .*;/public static boolean HorizontalOrientation = $HorizontalOrientation;/" | \
 	sed "s/public static boolean InhibitSuspend = .*;/public static boolean InhibitSuspend = $InhibitSuspend;/" | \
 	sed "s/public static boolean AppUsesMouse = .*;/public static boolean AppUsesMouse = $AppUsesMouse;/" | \
@@ -525,7 +545,7 @@ cat project/src/Globals.java | \
 	sed "s/public static int AppTouchscreenKeyboardKeysAmountAutoFire = .*;/public static int AppTouchscreenKeyboardKeysAmountAutoFire = $AppTouchscreenKeyboardKeysAmountAutoFire;/" | \
 	sed "s%public static String ReadmeText = .*%public static String ReadmeText = \"$ReadmeText\".replace(\"^\",\"\\\n\");%" | \
 	sed "s%public static String CommandLine = .*%public static String CommandLine = \"$AppCmdline\";%" | \
-	sed "s/public LoadLibrary() .*/public LoadLibrary() { $LibrariesToLoad };/" > \
+	sed "s/public static String AppLibraries.*/public static String AppLibraries[] = { $LibrariesToLoad };/" > \
 	project/src/Globals.java.1
 mv -f project/src/Globals.java.1 project/src/Globals.java
 
