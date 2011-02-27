@@ -179,7 +179,7 @@ typedef char int8;
 #elif defined(ANDROID)
 #define DEFAULT_PATH	"timidity"
 #define DEFAULT_PATH1	"/sdcard/timidity"
-#define DEFAULT_PATH2	"/sdcard/app-data/timidity"
+#define DEFAULT_PATH2	"/sdcard/app-data/com.sirnacnud.openxcom/timidity"
 #else
 #define DEFAULT_PATH	"/etc/timidity"
 #define DEFAULT_PATH1	"/usr/share/timidity"
