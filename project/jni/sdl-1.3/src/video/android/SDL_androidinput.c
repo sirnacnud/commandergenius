@@ -117,6 +117,38 @@ int oldMouseX = 0;
 int oldMouseY = 0;
 int oldMouseButtons = 0;
 
+static int UnicodeToUtf8(int src, char * dest)
+{
+	int len = 0;
+    if ( src <= 0x007f) {
+        *dest++ = (char)src;
+        len = 1;
+    } else if (src <= 0x07ff) {
+        *dest++ = (char)0xc0 | (src >> 6);
+        *dest++ = (char)0x80 | (src & 0x003f);
+        len = 2;
+    } else if (src == 0xFEFF) {
+        // nop -- zap the BOM
+    } else if (src >= 0xD800 && src <= 0xDFFF) {
+        // surrogates not supported
+    } else if (src <= 0xffff) {
+        *dest++ = (char)0xe0 | (src >> 12);
+        *dest++ = (char)0x80 | ((src >> 6) & 0x003f);
+        *dest++ = (char)0x80 | (src & 0x003f);
+        len = 3;
+    } else if (src <= 0xffff) {
+        *dest++ = (char)0xf0 | (src >> 18);
+        *dest++ = (char)0x80 | ((src >> 12) & 0x3f);
+        *dest++ = (char)0x80 | ((src >> 6) & 0x3f);
+        *dest++ = (char)0x80 | (src & 0x3f);
+        len = 4;
+    } else {
+        // out of Unicode range
+    }
+    *dest = 0;
+    return len;
+}
+
 static inline int InsideRect(const SDL_Rect * r, int x, int y)
 {
 	return ( x >= r->x && x <= r->x + r->w ) && ( y >= r->y && y <= r->y + r->h );
@@ -639,16 +671,40 @@ JAVA_EXPORT_NAME(DemoGLSurfaceView_nativeKey) ( JNIEnv*  env, jobject thiz, jint
 	SDL_ANDROID_MainThreadPushKeyboardKey( action ? SDL_PRESSED : SDL_RELEASED, TranslateKey(key) );
 }
 
-JNIEXPORT void JNICALL 
-JAVA_EXPORT_NAME(DemoRenderer_nativeTextInput) ( JNIEnv*  env, jobject thiz, jint ascii, jint unicode )
+static char * textInputBuffer = NULL;
+int textInputBufferLen = 0;
+int textInputBufferPos = 0;
+
+void SDL_ANDROID_TextInputInit(char * buffer, int len)
 {
-	SDL_ANDROID_MainThreadPushText(ascii, unicode);
+	textInputBuffer = buffer;
+	textInputBufferLen = len;
 }
 
+JNIEXPORT void JNICALL
+JAVA_EXPORT_NAME(DemoRenderer_nativeTextInput) ( JNIEnv*  env, jobject thiz, jint ascii, jint unicode )
+{
+	if( !textInputBuffer )
+		SDL_ANDROID_MainThreadPushText(ascii, unicode);
+	else
+	{
+		if( textInputBufferPos < textInputBufferLen + 4 )
+		{
+			textInputBufferPos += UnicodeToUtf8(unicode, textInputBuffer + textInputBufferPos);
+		}
+	}
+}
+
+JNIEXPORT void JNICALL
+JAVA_EXPORT_NAME(DemoRenderer_nativeTextInputFinished) ( JNIEnv*  env, jobject thiz )
+{
+	textInputBuffer = NULL;
+	SDL_ANDROID_TextInputFinished();
+}
 
 static void updateOrientation ( float accX, float accY, float accZ );
 
-JNIEXPORT void JNICALL 
+JNIEXPORT void JNICALL
 JAVA_EXPORT_NAME(AccelerometerReader_nativeAccelerometer) ( JNIEnv*  env, jobject  thiz, jfloat accPosX, jfloat accPosY, jfloat accPosZ )
 {
 #if SDL_VERSION_ATLEAST(1,3,0)
@@ -1436,21 +1492,62 @@ extern void SDL_ANDROID_DeferredTextInput()
 };
 #else
 
-enum { DEFERRED_TEXT_COUNT = 128 };
+enum { DEFERRED_TEXT_COUNT = 256 };
 static struct { int scancode; int unicode; int down; } deferredText[DEFERRED_TEXT_COUNT];
 static int deferredTextIdx1 = 0;
 static int deferredTextIdx2 = 0;
 static SDL_mutex * deferredTextMutex = NULL;
 
+static SDL_keysym asciiToKeysym(int ascii, int unicode)
+{
+	SDL_keysym keysym;
+	keysym.scancode = ascii;
+	keysym.sym = ascii;
+	keysym.mod = KMOD_NONE;
+	keysym.unicode = 0;
+	if ( SDL_TranslateUNICODE )
+		keysym.unicode = unicode;
+	return keysym;
+}
+
+static int checkShiftRequired( int * sym )
+{
+	switch( *sym )
+	{
+		case '!': *sym = '1'; return 1;
+		case '@': *sym = '2'; return 1;
+		case '#': *sym = '3'; return 1;
+		case '$': *sym = '4'; return 1;
+		case '%': *sym = '5'; return 1;
+		case '^': *sym = '6'; return 1;
+		case '&': *sym = '7'; return 1;
+		case '*': *sym = '8'; return 1;
+		case '(': *sym = '9'; return 1;
+		case ')': *sym = '0'; return 1;
+		case '_': *sym = '-'; return 1;
+		case '+': *sym = '='; return 1;
+		case '|': *sym = '\\';return 1;
+		case '<': *sym = ','; return 1;
+		case '>': *sym = '.'; return 1;
+		case '?': *sym = '/'; return 1;
+		case ':': *sym = ';'; return 1;
+		case '"': *sym = '\'';return 1;
+		case '{': *sym = '['; return 1;
+		case '}': *sym = ']'; return 1;
+		case '~': *sym = '`'; return 1;
+		default: if( *sym >= 'A' && *sym <= 'Z' ) { *sym += 'a' - 'A'; return 1; };
+	}
+	return 0;
+}
+
 void SDL_ANDROID_DeferredTextInput()
 {
-	int count = 2;
 	if( !deferredTextMutex )
 		deferredTextMutex = SDL_CreateMutex();
 
 	SDL_mutexP(deferredTextMutex);
 	
-	while( deferredTextIdx1 != deferredTextIdx2 && count > 0 )
+	if( deferredTextIdx1 != deferredTextIdx2 )
 	{
 		int nextEvent = getNextEvent();
 		if( nextEvent == -1 )
@@ -1466,24 +1563,20 @@ void SDL_ANDROID_DeferredTextInput()
 		
 		ev->type = SDL_KEYDOWN;
 		ev->key.state = deferredText[deferredTextIdx1].down;
-		ev->key.keysym.scancode = deferredText[deferredTextIdx1].scancode;
-		ev->key.keysym.sym = deferredText[deferredTextIdx1].scancode;
-		ev->key.keysym.mod = KMOD_NONE;
-		ev->key.keysym.unicode = 0;
-		if ( SDL_TranslateUNICODE )
-			ev->key.keysym.unicode = deferredText[deferredTextIdx1].unicode;
+		ev->key.keysym = asciiToKeysym( deferredText[deferredTextIdx1].scancode, deferredText[deferredTextIdx1].unicode );
 		
 		BufferedEventsEnd = nextEvent;
 		SDL_mutexV(BufferedEventsMutex);
-		count --;
+		SDL_ANDROID_MainThreadPushMouseMotion(oldMouseX + (oldMouseX % 2 ? -1 : 1), oldMouseY); // Force screen redraw
 	}
 	
 	SDL_mutexV(deferredTextMutex);
 };
 #endif
 
-extern void SDL_ANDROID_MainThreadPushText( int scancode, int unicode )
+extern void SDL_ANDROID_MainThreadPushText( int ascii, int unicode )
 {
+	int shiftRequired;
 
 	//__android_log_print(ANDROID_LOG_INFO, "libSDL", "SDL_ANDROID_MainThreadPushText(): %i %i", scancode, unicode);
 	int nextEvent = getNextEvent();
@@ -1494,10 +1587,8 @@ extern void SDL_ANDROID_MainThreadPushText( int scancode, int unicode )
 	
 #if SDL_VERSION_ATLEAST(1,3,0)
 
-	// TODO: convert to UTF-8
 	ev->type = SDL_TEXTINPUT;
-	ev->text.text[0] = scancode;
-	ev->text.text[1] = 0;
+	UnicodeToUtf8(unicode, ev->text.text);
 
 #else
 
@@ -1508,33 +1599,39 @@ extern void SDL_ANDROID_MainThreadPushText( int scancode, int unicode )
 
 	ev->type = 0;
 	
-	if( deferredTextIdx1 == deferredTextIdx2 )
-	{
-		ev->type = SDL_KEYDOWN;
-		ev->key.state = SDL_PRESSED;
-		ev->key.keysym.scancode = scancode;
-		ev->key.keysym.sym = scancode;
-		ev->key.keysym.mod = KMOD_NONE;
-		ev->key.keysym.unicode = 0;
-		if ( SDL_TranslateUNICODE )
-			ev->key.keysym.unicode = unicode;
-	}
-	else
+	shiftRequired = checkShiftRequired(&ascii);
+	
+	if( shiftRequired )
 	{
 		deferredTextIdx2++;
 		if( deferredTextIdx2 >= DEFERRED_TEXT_COUNT )
 			deferredTextIdx2 = 0;
 		deferredText[deferredTextIdx2].down = SDL_PRESSED;
-		deferredText[deferredTextIdx2].scancode = scancode;
-		deferredText[deferredTextIdx2].unicode = unicode;
+		deferredText[deferredTextIdx2].scancode = SDLK_LSHIFT;
+		deferredText[deferredTextIdx2].unicode = SDLK_LSHIFT;
 	}
+	deferredTextIdx2++;
+	if( deferredTextIdx2 >= DEFERRED_TEXT_COUNT )
+		deferredTextIdx2 = 0;
+	deferredText[deferredTextIdx2].down = SDL_PRESSED;
+	deferredText[deferredTextIdx2].scancode = ascii;
+	deferredText[deferredTextIdx2].unicode = unicode;
 
 	deferredTextIdx2++;
 	if( deferredTextIdx2 >= DEFERRED_TEXT_COUNT )
 		deferredTextIdx2 = 0;
 	deferredText[deferredTextIdx2].down = SDL_RELEASED;
-	deferredText[deferredTextIdx2].scancode = scancode;
+	deferredText[deferredTextIdx2].scancode = ascii;
 	deferredText[deferredTextIdx2].unicode = unicode;
+	if( shiftRequired )
+	{
+		deferredTextIdx2++;
+		if( deferredTextIdx2 >= DEFERRED_TEXT_COUNT )
+			deferredTextIdx2 = 0;
+		deferredText[deferredTextIdx2].down = SDL_RELEASED;
+		deferredText[deferredTextIdx2].scancode = SDLK_LSHIFT;
+		deferredText[deferredTextIdx2].unicode = SDLK_LSHIFT;
+	}
 
 	SDL_mutexV(deferredTextMutex);
 
@@ -1717,8 +1814,6 @@ JAVA_EXPORT_NAME(Settings_nativeInitKeymap) ( JNIEnv*  env, jobject thiz )
   int i;
   SDLKey * keymap = SDL_android_keymap;
 
-  // TODO: keys are mapped rather randomly
-
   for (i=0; i<SDL_arraysize(SDL_android_keymap); ++i)
     SDL_android_keymap[i] = SDL_KEY(UNKNOWN);
 
@@ -1737,7 +1832,9 @@ JAVA_EXPORT_NAME(Settings_nativeInitKeymap) ( JNIEnv*  env, jobject thiz )
   
   keymap[KEYCODE_HOME] = SDL_KEY(HOME); // Cannot be used in application
 
+  // On some devices pressing Camera key will generate Camera keyevent, but releasing it will generate Focus keyevent.
   keymap[KEYCODE_CAMERA] = SDL_KEY(SDL_KEY_VAL(SDL_ANDROID_KEYCODE_6));
+  keymap[KEYCODE_FOCUS] = SDL_KEY(SDL_KEY_VAL(SDL_ANDROID_KEYCODE_6));
 
   keymap[KEYCODE_0] = SDL_KEY(0);
   keymap[KEYCODE_1] = SDL_KEY(1);
@@ -1827,7 +1924,6 @@ JAVA_EXPORT_NAME(Settings_nativeInitKeymap) ( JNIEnv*  env, jobject thiz )
   keymap[KEYCODE_ENVELOPE] = SDL_KEY(F4);
 
   keymap[KEYCODE_HEADSETHOOK] = SDL_KEY(F5);
-  keymap[KEYCODE_FOCUS] = SDL_KEY(F6);
   keymap[KEYCODE_NOTIFICATION] = SDL_KEY(F7);
 
   // Cannot be received by application, OS internal
