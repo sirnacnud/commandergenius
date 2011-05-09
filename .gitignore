@@ -8,4 +8,4 @@ project/src
 project/res/values*
 project/jni/Settings.mk
 libapplication.so
-project/proguard.cfg
+
